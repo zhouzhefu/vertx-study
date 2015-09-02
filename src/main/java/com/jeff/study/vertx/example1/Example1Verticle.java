@@ -1,8 +1,13 @@
 package com.jeff.study.vertx.example1;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.StaticHandler;
+
+import java.util.Set;
 
 import com.jeff.study.vertx.util.ExampleRunner;
 
@@ -85,6 +90,20 @@ public class Example1Verticle extends AbstractVerticle {
 		Route r3 = router.route("/errorhub/*").failureHandler(failureCtx -> {
 			System.out.println(failureCtx.statusCode());
 			failureCtx.response().setStatusCode(failureCtx.statusCode()).end("Sorry not today!");
+		});
+		
+		//without the static handler, those html/images/css resources will not be served
+		router.route().handler(StaticHandler.create());
+		
+		//file upload
+		router.route().handler(BodyHandler.create().setUploadsDirectory("/Users/winniewang/Downloads"));
+		router.post("/bodyhandler/uploads").handler(ctx -> {
+			Set<FileUpload> uploads = ctx.fileUploads();
+			uploads.stream().forEach(upload -> {
+				System.out.println(upload.fileName());
+				System.out.println(upload.uploadedFileName());
+			});
+			ctx.response().end("Upload done!");
 		});
 		
 		
