@@ -1,16 +1,19 @@
 package com.jeff.study.vertx.example1;
 
-import java.util.Set;
-
-import com.jeff.study.vertx.util.ExampleRunner;
-
 import io.vertx.core.AbstractVerticle;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
+import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.ext.web.sstore.LocalSessionStore;
+import io.vertx.ext.web.sstore.SessionStore;
+
+import java.util.Set;
+
+import com.jeff.study.vertx.util.ExampleRunner;
 
 public class Example1Verticle extends AbstractVerticle {
 
@@ -93,9 +96,6 @@ public class Example1Verticle extends AbstractVerticle {
 			failureCtx.response().setStatusCode(failureCtx.statusCode()).end("Sorry not today!");
 		});
 		
-		//without the static handler, those html/images/css resources will not be served
-		router.route().handler(StaticHandler.create());
-		
 		//file upload
 		router.route().handler(BodyHandler.create().setUploadsDirectory("/Users/winniewang/Downloads"));
 		router.post("/bodyhandler/uploads").handler(ctx -> {
@@ -107,10 +107,46 @@ public class Example1Verticle extends AbstractVerticle {
 			ctx.response().end("Upload done!");
 		});
 		
+		router.route("/try/me").handler(ctx -> {
+			ctx.response().end("try me ok!");
+		});
+		
 		
 		//handling session
 		router.route().handler(CookieHandler.create()); //cookie support is the prerequisite of session support
+		SessionStore store = LocalSessionStore.create(vertx);
+		//only patterned "/sessioned/*" URL will manage session
+		router.route().handler(SessionHandler.create(store));
+		//this should be sessioned
+		router.route("/sessioned/foo").handler(ctx -> {
+			System.out.println("/sessioned/foo start...");
+			ctx.session().put("sessionKey1", "SessionVal1");
+			//vertx session is implemented by cookie, if you use an HTTP/REST tool other than a browser, 
+			//remember check the request header "Cookie", by default they may always launched with a 
+			//new cookie, and therefore vertx session is always a new one. 
+			System.out.println(ctx.session().id());
+			ctx.response().end("Key1 added.");
+		});
+		router.route("/sessioned/bar").handler(ctx -> {
+			System.out.println("/sessioned/bar start...");
+			System.out.println(ctx.session().get("sessionKey1"));
+			System.out.println(ctx.session().id());
+			ctx.response().end("Key1 got.");
+		});
+		//this should not be sessioned
+		router.route("/nosession").handler(ctx -> {
+			System.out.println("Want to get key1? Sorry. ");
+			//will hit NPE because ctx.session() == null
+			System.out.println(ctx.session().get("sessionKey1"));
+			ctx.response().end();
+		});
 		
+		
+		
+		
+		//without the static handler, those html/images/css resources will not be served
+		//and this should be put at the last route setting, otherwise all the below route will not work
+		router.route().handler(StaticHandler.create());
 		
 		vertx.createHttpServer().requestHandler(router::accept).listen(8989);
 	}
