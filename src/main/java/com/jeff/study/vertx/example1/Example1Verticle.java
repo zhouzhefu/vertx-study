@@ -1,15 +1,16 @@
 package com.jeff.study.vertx.example1;
 
+import java.util.Set;
+
+import com.jeff.study.vertx.util.ExampleRunner;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-
-import java.util.Set;
-
-import com.jeff.study.vertx.util.ExampleRunner;
 
 public class Example1Verticle extends AbstractVerticle {
 
@@ -105,6 +106,10 @@ public class Example1Verticle extends AbstractVerticle {
 			});
 			ctx.response().end("Upload done!");
 		});
+		
+		
+		//handling session
+		router.route().handler(CookieHandler.create()); //cookie support is the prerequisite of session support
 		
 		
 		vertx.createHttpServer().requestHandler(router::accept).listen(8989);
