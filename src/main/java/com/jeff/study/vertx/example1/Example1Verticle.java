@@ -116,7 +116,7 @@ public class Example1Verticle extends AbstractVerticle {
 		router.route().handler(CookieHandler.create()); //cookie support is the prerequisite of session support
 		SessionStore store = LocalSessionStore.create(vertx);
 		//only patterned "/sessioned/*" URL will manage session
-		router.route().handler(SessionHandler.create(store));
+		router.route("/sessioned/*").handler(SessionHandler.create(store));
 		//this should be sessioned
 		router.route("/sessioned/foo").handler(ctx -> {
 			System.out.println("/sessioned/foo start...");
@@ -129,18 +129,20 @@ public class Example1Verticle extends AbstractVerticle {
 		});
 		router.route("/sessioned/bar").handler(ctx -> {
 			System.out.println("/sessioned/bar start...");
-			System.out.println(ctx.session().get("sessionKey1"));
+			System.out.println(ctx.session().get("sessionKey1").toString());
 			System.out.println(ctx.session().id());
 			ctx.response().end("Key1 got.");
 		});
-		//this should not be sessioned
+		//this path should not be sessioned
 		router.route("/nosession").handler(ctx -> {
 			System.out.println("Want to get key1? Sorry. ");
 			//will hit NPE because ctx.session() == null
-			System.out.println(ctx.session().get("sessionKey1"));
+			System.out.println(ctx.session().get("sessionKey1").toString());
 			ctx.response().end();
 		});
 		
+		
+		//auth
 		
 		
 		
