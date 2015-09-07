@@ -12,6 +12,7 @@ import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.AuthHandler;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.FormLoginHandler;
@@ -21,6 +22,7 @@ import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.UserSessionHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
+import io.vertx.rxjava.ext.web.handler.BasicAuthHandler;
 
 public class Example1Verticle extends AbstractVerticle {
 
@@ -149,16 +151,18 @@ public class Example1Verticle extends AbstractVerticle {
 		});
 		
 		
-		//auth
+		//auth. Here exampled is a quite basic one, for more advanced/secured auth, please refer to JWTAuth
 		AuthProvider authProvider = ShiroAuth.create(vertx, ShiroAuthRealmType.PROPERTIES, new JsonObject().put("properties_path", "classpath:test_auth.properties"));
 		router.route("/auth/*").handler(CookieHandler.create());
 		router.route("/auth/*").handler(SessionHandler.create(LocalSessionStore.create(vertx)));
 		//UserSessionHandler should be added to root route of the module("/auth/*" in this case), 
 		//if added to "/auth/authed/*", log out will not work as expected. 
 		router.route("/auth/*").handler(UserSessionHandler.create(authProvider));
-		//RedirectAuthHandler will by default redirect to ${webRoot}/loginpage, sometimes we have to custom on our own. 
+		//RedirectAuthHandler will by default redirect to ${webRoot}/loginpage
 		//router.route("/auth/authed/*").handler(RedirectAuthHandler.create(authProvider));
+		router.route("/auth/authed/*").handler(RedirectAuthHandler.create(authProvider, "/auth/authlogin"));
 		router.route("/auth/authed/sample1").handler(ctx -> {
+			//with effect of the RedirectAuthHandler, the result of "Sorry not today" will not be seen by user.
 			String result = (ctx.user() != null)?"Thank you for access sample1, " + ctx.user() : "Sorry not today";
 			StringBuilder html = new StringBuilder()
 					.append("<html><head></head><body>")
@@ -183,8 +187,10 @@ public class Example1Verticle extends AbstractVerticle {
 				.append("</body></html>");
 			ctx.response().end(html.toString());
 		});
-		
-		router.post("/auth/loginhandler").handler(FormLoginHandler.create(authProvider));
+		//Default FormLoginHandler has no redirection, simply display "Successful"
+		//router.post("/auth/loginhandler").handler(FormLoginHandler.create(authProvider));
+		router.post("/auth/loginhandler").handler(FormLoginHandler.create(
+				authProvider, "username", "password", "/auth/authed/homes", "/auth/authed/homes"));
 		/** below should be the actual implementation of above out of box "FormLoginHandler", 
 		 *  guess in the login form the "username" and "password" fields must have.
 		router.post("/auth/loginhandler").handler(ctx -> {
@@ -206,8 +212,41 @@ public class Example1Verticle extends AbstractVerticle {
 			});
 		});
 		*/
+		router.route("/auth/authed/homes").handler(ctx -> {
+			ctx.response().putHeader("content-type", "text/html").setChunked(true)
+						.write("<div><a href=\"/auth/authed/jeffhome\">Jeff's Home</a></div>")
+						.write("<div><a href=\"/auth/authed/winniehome\">Winnie's Home</a></div>")
+						.write("<div><a href=\"/auth/authed/sample1\">Sample 1</a></div>")
+						.write("<br>")
+						.write("<div><a href=\"/auth/authed/logout\">Log Out</a></div>")
+						.end();
+		});
 		
 		
+		//authorities partition
+		router.route("/auth/authed/jeffhome").handler(
+				RedirectAuthHandler.create(authProvider, "/auth/authlogin")
+									.addAuthority("do_actual_work"));
+		router.route("/auth/authed/jeffhome").handler(ctx -> {
+			ctx.response().putHeader("content-type", "text/html")
+						  .setChunked(true)
+							.write("<div>Welcome home, Jeff</div>")
+							.end("<div><a href=\"/auth/authed/logout\">Log Out</a></div>");
+		});
+		
+		router.route("/auth/authed/winniehome").handler(
+				RedirectAuthHandler.create(authProvider, "/auth/authlogin")
+									.addAuthority("place_order"));
+		router.route("/auth/authed/winniehome").handler(ctx -> {
+			StringBuilder output = new StringBuilder();
+			output.append("<div>Welcome home, Winnie</div>")
+				  .append("<div><a href=\"/auth/authed/logout\">Log Out</a></div>");
+			
+			ctx.response().putHeader("content-type", "text/html")
+						  /*.setChunked(false)*/.putHeader("content-length", "" + output.length())
+							.write("<div>Welcome home, Winnie</div>")
+							.end("<div><a href=\"/auth/authed/logout\">Log Out</a></div>");
+		});
 		//
 		
 		//without the static handler, those  nhggvfg/images/css resources will not be served
