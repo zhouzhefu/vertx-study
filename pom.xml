@@ -31,6 +31,12 @@
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
+    
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-auth-shiro</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   
   <build>

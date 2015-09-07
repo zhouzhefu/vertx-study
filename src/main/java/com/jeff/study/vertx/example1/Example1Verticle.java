@@ -1,19 +1,26 @@
 package com.jeff.study.vertx.example1;
 
+import java.util.Set;
+
+import com.jeff.study.vertx.util.ExampleRunner;
+
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.AuthProvider;
+import io.vertx.ext.auth.shiro.ShiroAuth;
+import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
+import io.vertx.ext.web.handler.FormLoginHandler;
+import io.vertx.ext.web.handler.RedirectAuthHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.ext.web.handler.UserSessionHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
-
-import java.util.Set;
-
-import com.jeff.study.vertx.util.ExampleRunner;
 
 public class Example1Verticle extends AbstractVerticle {
 
@@ -143,12 +150,69 @@ public class Example1Verticle extends AbstractVerticle {
 		
 		
 		//auth
+		AuthProvider authProvider = ShiroAuth.create(vertx, ShiroAuthRealmType.PROPERTIES, new JsonObject().put("properties_path", "classpath:test_auth.properties"));
+		router.route("/auth/*").handler(CookieHandler.create());
+		router.route("/auth/*").handler(SessionHandler.create(LocalSessionStore.create(vertx)));
+		//UserSessionHandler should be added to root route of the module("/auth/*" in this case), 
+		//if added to "/auth/authed/*", log out will not work as expected. 
+		router.route("/auth/*").handler(UserSessionHandler.create(authProvider));
+		//RedirectAuthHandler will by default redirect to ${webRoot}/loginpage, sometimes we have to custom on our own. 
+		//router.route("/auth/authed/*").handler(RedirectAuthHandler.create(authProvider));
+		router.route("/auth/authed/sample1").handler(ctx -> {
+			String result = (ctx.user() != null)?"Thank you for access sample1, " + ctx.user() : "Sorry not today";
+			StringBuilder html = new StringBuilder()
+					.append("<html><head></head><body>")
+					.append("<div>").append(result).append("</div>")
+					.append("<a href=\"/auth/authed/logout\">").append("Log Out</a>")
+					.append("</body></html>");
+			ctx.response().end(html.toString());
+		});
+		router.route("/auth/authed/logout").handler(ctx -> {
+			ctx.clearUser();
+			ctx.response().putHeader("location", "/auth/authlogin").setStatusCode(302).end();
+		});
+		//handle login page & login action
+		router.route("/auth/authlogin").handler(ctx -> {
+			StringBuilder html = new StringBuilder();
+			html.append("<html><head></head><body>")
+				.append("<form action=\"loginhandler\" method=\"post\">")
+				.append("UserName: <input type=\"text\" name=\"username\" /><br/>")
+				.append("Password: <input type=\"text\" name=\"password\" /><br/>")
+				.append("<button type=\"submit\">Submit</button>")
+				.append("</form")
+				.append("</body></html>");
+			ctx.response().end(html.toString());
+		});
+		
+		router.post("/auth/loginhandler").handler(FormLoginHandler.create(authProvider));
+		/** below should be the actual implementation of above out of box "FormLoginHandler", 
+		 *  guess in the login form the "username" and "password" fields must have.
+		router.post("/auth/loginhandler").handler(ctx -> {
+			JsonObject principal = new JsonObject();
+			principal.put("username", ctx.request().getParam("username"));
+			principal.put("password", ctx.request().getParam("password"));
+			
+			authProvider.authenticate(principal, res -> {
+				String result = null;
+				if (res.succeeded()) {
+					User user = res.result();
+					result = "Login successful: " + user.principal();
+					ctx.setUser(user);
+				} else {
+					result = "Login failed";
+				}
+				
+				ctx.response().end(result);
+			});
+		});
+		*/
 		
 		
+		//
 		
-		//without the static handler, those html/images/css resources will not be served
+		//without the static handler, those  nhggvfg/images/css resources will not be served
 		//and this should be put at the last route setting, otherwise all the below route will not work
-		router.route().handler(StaticHandler.create());
+		router.route().handler(StaticHandler.create().setCachingEnabled(false));
 		
 		vertx.createHttpServer().requestHandler(router::accept).listen(8989);
 	}
