@@ -2,7 +2,8 @@
 <head>
   <title></title>
   <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
-  <script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+  <!-- <script src="http://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>  -->
+  <script src="http://cdn.sockjs.org/sockjs-0.3.4.js"></script>
 </head>
 
 <style>
@@ -13,12 +14,14 @@
 
 <body>
 
+<div><button onclick="send()">Send</button></div>
 <div class="news">Reply of Echo: </div><br>
 <div id="status" class="news"></div>
 
 <script>
  
 var sock = new SockJS('http://localhost:8989/sockjs');
+/*
 sock.onopen = function() {
 	console.log('SockJS open');
 }
@@ -30,9 +33,12 @@ sock.onclose = function() {
 	console.log('SockJS closed');
 }
 
-sock.send('Test SockJS Client. ');
-sock.close();
-
+function send() {
+	alert('Ready to Send?');
+	sock.send('Test SockJS Client. ');
+	sock.close();
+}
+*/
 
 </script>
 

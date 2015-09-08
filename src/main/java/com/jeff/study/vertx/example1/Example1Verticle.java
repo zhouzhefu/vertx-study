@@ -250,12 +250,14 @@ public class Example1Verticle extends AbstractVerticle {
 		
 		
 		// SockJS
-		SockJSHandler sockJSHandler = SockJSHandler.create(vertx, new SockJSHandlerOptions().setHeartbeatInterval(2000));
-		sockJSHandler.socketHandler(sockJSSocket -> {
+		SockJSHandlerOptions options = new SockJSHandlerOptions().setHeartbeatInterval(2000);
+		SockJSHandler sockJSHandler = SockJSHandler.create(vertx, options);
+		sockJSHandler.socketHandler(socket -> {
 			System.out.println("In Socket...");
-			sockJSSocket.handler(sockJSSocket::write);
+			socket.handler(socket::write);
 		});
 		router.route("/sockjs").handler(sockJSHandler);
+		router.route("/sockjs/info").handler(ctx -> {ctx.response().end("{}");});
 		
 		//without the static handler, those  nhggvfg/images/css resources will not be served
 		//and this should be put at the last route setting, otherwise all the below route will not work
