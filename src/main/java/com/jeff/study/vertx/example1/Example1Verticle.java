@@ -12,7 +12,6 @@ import io.vertx.ext.auth.shiro.ShiroAuthRealmType;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.AuthHandler;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.FormLoginHandler;
@@ -20,9 +19,10 @@ import io.vertx.ext.web.handler.RedirectAuthHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.UserSessionHandler;
+import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
-import io.vertx.rxjava.ext.web.handler.BasicAuthHandler;
 
 public class Example1Verticle extends AbstractVerticle {
 
@@ -247,7 +247,15 @@ public class Example1Verticle extends AbstractVerticle {
 							.write("<div>Welcome home, Winnie</div>")
 							.end("<div><a href=\"/auth/authed/logout\">Log Out</a></div>");
 		});
-		//
+		
+		
+		// SockJS
+		SockJSHandler sockJSHandler = SockJSHandler.create(vertx, new SockJSHandlerOptions().setHeartbeatInterval(2000));
+		sockJSHandler.socketHandler(sockJSSocket -> {
+			System.out.println("In Socket...");
+			sockJSSocket.handler(sockJSSocket::write);
+		});
+		router.route("/sockjs").handler(sockJSHandler);
 		
 		//without the static handler, those  nhggvfg/images/css resources will not be served
 		//and this should be put at the last route setting, otherwise all the below route will not work
