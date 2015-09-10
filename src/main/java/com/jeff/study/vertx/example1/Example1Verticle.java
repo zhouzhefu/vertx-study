@@ -19,6 +19,7 @@ import io.vertx.ext.web.handler.RedirectAuthHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.UserSessionHandler;
+import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
 import io.vertx.ext.web.sstore.LocalSessionStore;
@@ -249,15 +250,23 @@ public class Example1Verticle extends AbstractVerticle {
 		});
 		
 		
-		// SockJS
+		// SockJS, totally don't know how to make it work, why websocket API need so many funny URL to call? For example, the */info. 
 		SockJSHandlerOptions options = new SockJSHandlerOptions().setHeartbeatInterval(2000);
 		SockJSHandler sockJSHandler = SockJSHandler.create(vertx, options);
 		sockJSHandler.socketHandler(socket -> {
 			System.out.println("In Socket...");
 			socket.handler(socket::write);
 		});
-		router.route("/sockjs").handler(sockJSHandler);
-		router.route("/sockjs/info").handler(ctx -> {ctx.response().end("{}");});
+		// In /sockjs/*, the * sign is very important. there will be some URL under /sockjs/* will be called which is meant for WebSocket, 
+		// they will be handled by the socket handler automatically. 
+		router.route("/sockjs/*").handler(sockJSHandler);
+		
+		
+		// Eventbus powered by SockJS
+		SockJSHandler sockHandler = SockJSHandler.create(vertx);
+		sockHandler.bridge(new BridgeOptions());
+		router.route("/eventbus/*").handler(sockHandler);
+		
 		
 		//without the static handler, those  nhggvfg/images/css resources will not be served
 		//and this should be put at the last route setting, otherwise all the below route will not work

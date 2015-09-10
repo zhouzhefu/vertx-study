@@ -4,6 +4,7 @@
   <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
   <!-- <script src="http://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>  -->
   <script src="http://cdn.sockjs.org/sockjs-0.3.4.js"></script>
+  <script src="vertxbus.js"></script>
 </head>
 
 <style>
@@ -20,25 +21,17 @@
 
 <script>
  
-var sock = new SockJS('http://localhost:8989/sockjs');
-
-sock.onopen = function() {
-	console.log('SockJS open');
+var eb = new vertx.EventBus("http://localhost:8989/eventbus");
+eb.onopen = function() {
+	console.log('EventBus open!');
+	
+	eb.registerHandler('some-address', function(message) {
+		console.log('Receive a message: ' + JSON.stringify(message));
+	});
+	
+	eb.send('some-address', 'Hello EB!'); //{name:'Tim', age:586}
+	console.log('event sent out!');
 }
-sock.onmessage = function(e) {
-	alert('OK');
-	console.log('SockJS Message', e.data);
-	$('#status').html(e.data);
-}
-sock.onclose = function() {
-	console.log('SockJS closed');
-}
-
-function send() {
-	console.log('Sending Message');
-	sock.send('test');
-}
-
 
 </script>
 
