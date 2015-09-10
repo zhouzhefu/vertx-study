@@ -268,8 +268,12 @@ public class Example1Verticle extends AbstractVerticle {
 		PermittedOptions permitOptions = new PermittedOptions();
 //		permitOptions.setAddress("some-address"); //setAddress() means only this address is allowed
 		permitOptions.setAddressRegex(".*"); // with this regex, ALL tunnels are allowed
-		// By default the BridgeOptions is secured, if don't set inbound & outbount permitted options, 
-		// the client JS will receive message 'access denied'
+		// To be better secured, PermittedOptions can add "authority" to work with auth together. 
+		// PermittedOptions just work like a "firewall"
+		
+		
+		// By default the BridgeOptions is 'deny all', if don't set inbound & outbount permitted options, 
+		// the client JS will always receive message 'access denied'. 
 		BridgeOptions bridgeOptions = new BridgeOptions()
 				.addInboundPermitted(permitOptions)
 				.addOutboundPermitted(permitOptions);
@@ -278,6 +282,21 @@ public class Example1Verticle extends AbstractVerticle {
 		// option cusom handler added
 		sockHandler.bridge(bridgeOptions, event -> {
 			System.out.println(event.type() + " : " + event.rawMessage());
+			
+			if (event.type() == event.type().SEND || event.type() == event.type().PUBLISH) {
+				// condition for which the message will be eaten by server and never back to client
+				if (event.rawMessage().getJsonObject("body").containsKey("name")) {
+					event.complete(false); //refuse further processing
+					return;
+				}
+				
+				// condition for which the message will be modified and send back to client
+				if (event.rawMessage().getJsonObject("body").containsKey("habit")) {
+					event.rawMessage().getJsonObject("body").put("habit", "no habit");
+					event.complete(true);
+					return;
+				}
+			}
 			event.complete(true);
 		});
 		// similar to SockJS, the /* is MUST for a channel "eventbus"

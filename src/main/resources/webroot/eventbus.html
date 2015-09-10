@@ -27,10 +27,12 @@ eb.onopen = function() {
 	eb.registerHandler('some-address', function(message) {
 		var msgStr = JSON.stringify(message);
 		console.log('Receive a message: ' + msgStr);
-		$('#msgBox').html(msgStr);
+		$('#msgBox').append('<br>' + msgStr);
 	});
 	
-	eb.send('some-address', {name:'Tim', age:586}); //{name:'Tim', age:586}
+	eb.send('some-address', {name:'Tim', age:586});
+	eb.send('some-address', {nature:'malicious'});
+	eb.send('some-address', {age:32, habit:'piano'});
 	console.log('event sent out!');
 }
 
