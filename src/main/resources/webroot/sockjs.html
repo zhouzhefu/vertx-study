@@ -26,7 +26,6 @@ sock.onopen = function() {
 	console.log('SockJS open');
 }
 sock.onmessage = function(e) {
-	alert('OK');
 	console.log('SockJS Message', e.data);
 	$('#status').html(e.data);
 }
@@ -36,7 +35,17 @@ sock.onclose = function() {
 
 function send() {
 	console.log('Sending Message');
-	sock.send('test');
+	sock.send('Testing message');
+	
+	//at the end the Socket still have to be closed, but if do it immediately, highly possible the socket 
+	//was closed BEFORE receive the message. 
+	delayCloseSock(sock, 2000);
+}
+
+function delayCloseSock(sock, delay) {
+	setTimeout(function() {
+		sock.close();
+	}, delay);
 }
 
 
