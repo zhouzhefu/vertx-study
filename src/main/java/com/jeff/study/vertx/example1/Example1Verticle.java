@@ -20,6 +20,7 @@ import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.UserSessionHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
+import io.vertx.ext.web.handler.sockjs.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
 import io.vertx.ext.web.sstore.LocalSessionStore;
@@ -264,7 +265,22 @@ public class Example1Verticle extends AbstractVerticle {
 		
 		// Eventbus powered by SockJS
 		SockJSHandler sockHandler = SockJSHandler.create(vertx);
-		sockHandler.bridge(new BridgeOptions());
+		PermittedOptions permitOptions = new PermittedOptions();
+//		permitOptions.setAddress("some-address"); //setAddress() means only this address is allowed
+		permitOptions.setAddressRegex(".*"); // with this regex, ALL tunnels are allowed
+		// By default the BridgeOptions is secured, if don't set inbound & outbount permitted options, 
+		// the client JS will receive message 'access denied'
+		BridgeOptions bridgeOptions = new BridgeOptions()
+				.addInboundPermitted(permitOptions)
+				.addOutboundPermitted(permitOptions);
+		// default bridging without custom handler
+//		sockHandler.bridge(bridgeOptions);
+		// option cusom handler added
+		sockHandler.bridge(bridgeOptions, event -> {
+			System.out.println(event.type() + " : " + event.rawMessage());
+			event.complete(true);
+		});
+		// similar to SockJS, the /* is MUST for a channel "eventbus"
 		router.route("/eventbus/*").handler(sockHandler);
 		
 		

@@ -15,9 +15,8 @@
 
 <body>
 
-<div><button onclick="send()">Send</button></div>
-<div class="news">Reply of Echo: </div><br>
-<div id="status" class="news"></div>
+<div class="news">Message form EventBus: </div><br>
+<div id="msgBox" class="news"></div>
 
 <script>
  
@@ -26,10 +25,12 @@ eb.onopen = function() {
 	console.log('EventBus open!');
 	
 	eb.registerHandler('some-address', function(message) {
-		console.log('Receive a message: ' + JSON.stringify(message));
+		var msgStr = JSON.stringify(message);
+		console.log('Receive a message: ' + msgStr);
+		$('#msgBox').html(msgStr);
 	});
 	
-	eb.send('some-address', 'Hello EB!'); //{name:'Tim', age:586}
+	eb.send('some-address', {name:'Tim', age:586}); //{name:'Tim', age:586}
 	console.log('event sent out!');
 }
 
