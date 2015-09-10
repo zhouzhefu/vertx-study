@@ -30,9 +30,18 @@ eb.onopen = function() {
 		$('#msgBox').append('<br>' + msgStr);
 	});
 	
-	eb.send('some-address', {name:'Tim', age:586});
-	eb.send('some-address', {nature:'malicious'});
-	eb.send('some-address', {age:32, habit:'piano'});
+	eb.send('some-address', {name:'Tim', age:586, eventId:1});
+	eb.send('some-address', {nature:'malicious', eventId:2});
+	eb.send('some-address', {age:32, habit:'piano', eventId:3});
+
+// 	eb.send('some-address', {name:'Tim', age:586, eventId:1});
+// 	setTimeout(function() {
+// 		eb.send('some-address', {nature:'malicious', eventId:2});
+// 		setTimeout(function() {
+// 			eb.send('some-address', {age:32, habit:'piano', eventId:3});
+// 		}, 2000);
+// 	}, 2000);
+	
 	console.log('event sent out!');
 }
 
