@@ -301,6 +301,11 @@ public class Example1Verticle extends AbstractVerticle {
 		});
 		// similar to SockJS, the /* is MUST for a channel "eventbus"
 		router.route("/eventbus/*").handler(sockHandler);
+		/*
+		 * Unresolved question: when open multiple web client, e.g. safari + chrome, of the same html, 
+		 * the messages sent can only be received by one of the client, rather than both. 
+		 * There is seems an algorithm to select which client to send to, and definitely not "random". 
+		 */
 		
 		
 		//without the static handler, those  nhggvfg/images/css resources will not be served

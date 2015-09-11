@@ -14,25 +14,35 @@
 </style>
 
 <body>
-
+<div>
+	<button onclick="sendEvent(1)">Send 1</button>
+	<button onclick="sendEvent(2)">Send 2</button>
+	<button onclick="sendEvent(3)">Send 3</button>
+</div>
 <div class="news">Message form EventBus: </div><br>
 <div id="msgBox" class="news"></div>
 
 <script>
- 
+var events = [
+              {name:'Tim', age:586, eventId:1}, 
+              {nature:'malicious', eventId:2}, 
+              {age:32, habit:'piano', eventId:3}
+             ];
+var receivedCount = 0;
 var eb = new vertx.EventBus("http://localhost:8989/eventbus");
 eb.onopen = function() {
 	console.log('EventBus open!');
 	
 	eb.registerHandler('some-address', function(message) {
 		var msgStr = JSON.stringify(message);
+		receivedCount++;
 		console.log('Receive a message: ' + msgStr);
-		$('#msgBox').append('<br>' + msgStr);
+		$('#msgBox').append('<br>' + receivedCount + ' --> ' + msgStr);
 	});
 	
-	eb.send('some-address', {name:'Tim', age:586, eventId:1});
-	eb.send('some-address', {nature:'malicious', eventId:2});
-	eb.send('some-address', {age:32, habit:'piano', eventId:3});
+	eb.send('some-address', events[0]);
+	eb.send('some-address', events[1]);
+	eb.send('some-address', events[2]);
 
 // 	eb.send('some-address', {name:'Tim', age:586, eventId:1});
 // 	setTimeout(function() {
@@ -43,6 +53,10 @@ eb.onopen = function() {
 // 	}, 2000);
 	
 	console.log('event sent out!');
+}
+
+function sendEvent(seq) {
+	eb.send('some-address', events[seq - 1]);
 }
 
 </script>
